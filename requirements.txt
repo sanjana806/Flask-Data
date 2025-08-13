@@ -1,4 +1,5 @@
-panadas
+pandas
 matplotlib
 flask
+
 
