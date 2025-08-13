@@ -1,0 +1,43 @@
+<style>
+  .btn-link {
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Unique Bar Chart button */
+  .btn-bar {
+    background-color: #3498db;
+    color: white;
+  }
+  .btn-bar:hover {
+    background-color: #217dbb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+
+  /* Unique Game button */
+  .btn-game {
+    background: linear-gradient(45deg, #ff7eb3, #ff758c, #ff9770);
+    color: white;
+    font-weight: 600;
+  }
+  .btn-game:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+</style>
+
+<div class="nav-buttons">
+  <a class="btn-link btn-bar" href="/bar">📊 Bar Chart</a>
+  <a class="btn-link btn-pie" href="/pie">🎮 pie chart</a>
+  <a class="btn-link btn-game" href="/game">🎮 Gooooo..</a>
+</div>
+
+<img src="{{ chart_url  }}" />

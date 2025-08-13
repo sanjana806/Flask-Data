@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Person Runner — Dino-style Game</title>
+<style>
+  :root{
+    --bg:#e9f5ff;
+    --ground:#2f3640;
+    --accent:#ff6b6b;
+    --ui:#222;
+  }
+  body{
+    margin:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    background: linear-gradient(180deg, #c6e2ff, #f7fbff);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color:var(--ui);
+  }
+  .wrapper{
+    width: 900px;
+    max-width: calc(100vw - 24px);
+    margin: 20px;
+    text-align:center;
+  }
+  h1{
+    margin: 6px 0 12px;
+    font-size: 20px;
+  }
+  .game {
+    position: relative;
+    background: linear-gradient(180deg, #9fd8ff 0%, #eaf6ff 60%);
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(30,40,60,0.12);
+    overflow: hidden;
+  }
+  canvas{ display:block; width:100%; height:400px; }
+  .hud{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 14px;
+    align-items:center;
+  }
+  .score{
+    font-weight:700;
+    color:#0b3d91;
+  }
+  .controls{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .btn{
+    background:var(--accent);
+    color:white;
+    border:none;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .small{
+    background:#fff;
+    border:1px solid #ddd;
+    box-shadow:none;
+    color:#333;
+  }
+  .hint{
+    font-size:13px;
+    color:#444;
+    margin-top:8px;
+  }
+  .overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    pointer-events:none;
+  }
+  .center-box{
+    background: rgba(255,255,255,0.9);
+    padding:18px 24px;
+    border-radius:10px;
+    box-shadow: 0 10px 30px rgba(20,30,60,0.12);
+    pointer-events:auto;
+  }
+  .hidden{ display:none; }
+  footer{ margin-top:12px; font-size:13px; color:#555;}
+  @media (max-width:520px){
+    canvas{ height:300px; }
+    .wrapper{ margin:10px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1>Person Runner — Press <strong>Space</strong> or Tap to Jump</h1>
+    <div class="game" id="gameWrap">
+      <div class="hud">
+        <div class="score">Score: <span id="score">0</span></div>
+        <div class="controls">
+          <button class="btn" id="restartBtn">Restart</button>
+          <button class="btn small" id="muteBtn">Mute</button>
+        </div>
+      </div>
+
+      <canvas id="gameCanvas" width="900" height="400"></canvas>
+
+      <div class="overlay" id="overlay">
+        <div class="center-box" id="startBox">
+          <div style="font-size:18px; font-weight:700; color:#0b3d91">Tap / Press Space to Start</div>
+          <div style="margin-top:8px; color:#444">Avoid obstacles and score as much as possible.</div>
+        </div>
+        <div class="center-box hidden" id="gameOverBox">
+          <div style="font-size:20px; font-weight:800; margin-bottom:6px;color:#c62828">Game Over</div>
+          <div id="finalScore" style="font-size:16px; margin-bottom:12px;"></div>
+          <button class="btn" id="restartBoxBtn">Play Again</button>
+        </div>
+      </div>
+    </div>
+    <div class="hint">Controls: Space / Up arrow to jump. Mobile: tap anywhere on canvas.</div>
+    <footer>Built with ❤️</footer>
+  </div>
+
+<script>
+// --- Basic settings
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let cw = canvas.width;
+let ch = canvas.height;
+
+const scoreEl = document.getElementById('score');
+const overlay = document.getElementById('overlay');
+const startBox = document.getElementById('startBox');
+const gameOverBox = document.getElementById('gameOverBox');
+const finalScore = document.getElementById('finalScore');
+const restartBtn = document.getElementById('restartBtn');
+const restartBoxBtn = document.getElementById('restartBoxBtn');
+const muteBtn = document.getElementById('muteBtn');
+
+let gameState = 'idle'; // idle, running, over
+let score = 0;
+let speed = 5;
+let spawnTimer = 0;
+let spawnInterval = 90; // frames
+let obstacles = [];
+let gravity = 0.9;
+let frame = 0;
+let muted = false;
+
+// --- Person (player) object
+const player = {
+  x: 80,
+  y: ch - 90,
+  width: 36,
+  height: 56,
+  vy: 0,
+  grounded: true,
+  color: '#1e3a8a',
+  draw() {
+    // Draw a simple person: head, body, legs, arm
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // body
+    ctx.fillStyle = this.color;
+    ctx.fillRect(-this.width/2 + 2, -this.height + 14, 18, 30); // torso
+
+    // head
+    ctx.beginPath();
+    ctx.fillStyle = '#ffd6a5';
+    ctx.arc(0, -this.height + 8, 10, 0, Math.PI*2);
+    ctx.fill();
+
+    // left arm
+    ctx.beginPath();
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 4;
+    ctx.moveTo(-10, -this.height + 14);
+    ctx.lineTo(-20, -this.height + 28);
+    ctx.stroke();
+
+    // right arm
+    ctx.beginPath();
+    ctx.moveTo(10, -this.height + 14);
+    ctx.lineTo(20, -this.height + 28);
+    ctx.stroke();
+
+    // legs
+    ctx.beginPath();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 5;
+    ctx.moveTo(-6, -this.height + 44);
+    ctx.lineTo(-6, -this.height + 58);
+    ctx.moveTo(6, -this.height + 44);
+    ctx.lineTo(6, -this.height + 58);
+    ctx.stroke();
+
+    ctx.restore();
+  },
+  update() {
+    this.vy += gravity;
+    this.y += this.vy;
+
+    // ground collision
+    const groundLevel = ch - 40;
+    if (this.y >= groundLevel) {
+      this.y = groundLevel;
+      this.vy = 0;
+      this.grounded = true;
+    } else {
+      this.grounded = false;
+    }
+  },
+  jump() {
+    if (this.grounded) {
+      this.vy = -16;
+      this.grounded = false;
+      playSound('jump');
+    }
+  }
+};
+
+// --- Obstacle factory
+function createObstacle() {
+  // Random height and width to vary obstacles
+  const w = 20 + Math.floor(Math.random()*30);
+  const h = 30 + Math.floor(Math.random()*60);
+  const x = cw + 20;
+  const y = ch - 40 - h;
+  const type = Math.random() < 0.6 ? 'box' : 'pole';
+  return { x, y, w, h, type, passed:false };
+}
+
+// --- Sounds (simple beep via WebAudio)
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+function playSound(kind) {
+  if (muted) return;
+  initAudio();
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  if (kind === 'jump') {
+    o.frequency.value = 420;
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    o.start();
+    o.stop(audioCtx.currentTime + 0.08);
+  } else if (kind === 'score') {
+    o.frequency.value = 620;
+    g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    o.start();
+    o.stop(audioCtx.currentTime + 0.06);
+  } else if (kind === 'hit') {
+    o.frequency.value = 180;
+    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    o.start();
+    o.stop(audioCtx.currentTime + 0.14);
+  }
+}
+
+// --- Game functions
+function resetGame() {
+  score = 0;
+  speed = 5;
+  spawnTimer = 0;
+  spawnInterval = 90;
+  obstacles = [];
+  frame = 0;
+  player.y = ch - 90;
+  player.vy = 0;
+  gameState = 'idle';
+  updateHUD();
+  startBox.classList.remove('hidden');
+  gameOverBox.classList.add('hidden');
+  overlay.style.pointerEvents = 'auto';
+}
+
+function startGame() {
+  if (gameState === 'running') return;
+  gameState = 'running';
+  overlay.style.pointerEvents = 'none';
+  startBox.classList.add('hidden');
+  gameOverBox.classList.add('hidden');
+  initAudio();
+}
+
+function endGame() {
+  playSound('hit');
+  gameState = 'over';
+  finalScore.innerText = `Score: ${score}`;
+  gameOverBox.classList.remove('hidden');
+  overlay.style.pointerEvents = 'auto';
+}
+
+function updateHUD() {
+  scoreEl.innerText = score;
+}
+
+// collision check
+function isColliding(a, b) {
+  return !(a.x + a.width/2 < b.x || a.x - a.width/2 > b.x + b.w || a.y - a.height > b.y || a.y < b.y + b.h - b.h);
+}
+// We'll use bounding rectangle for simplicity with small adjustments:
+function checkCollision(playerRect, obs) {
+  const px1 = playerRect.x - playerRect.width/2;
+  const px2 = playerRect.x + playerRect.width/2;
+  const py1 = playerRect.y - playerRect.height;
+  const py2 = playerRect.y;
+  const ox1 = obs.x;
+  const ox2 = obs.x + obs.w;
+  const oy1 = obs.y;
+  const oy2 = obs.y + obs.h;
+  return !(px2 < ox1 || px1 > ox2 || py2 < oy1 || py1 > oy2);
+}
+
+// --- Main loop
+function loop() {
+  frame++;
+  // clear
+  ctx.clearRect(0,0,cw,ch);
+
+  // background sky gradient (drawn by CSS; optional)
+  // draw ground
+  ctx.fillStyle = '#7b8a97';
+  ctx.fillRect(0, ch-40, cw, 40);
+
+  // update player
+  if (gameState === 'running') {
+    player.update();
+  } else {
+    // small bobbing while idle
+    if (gameState === 'idle') {
+      player.y = (ch - 90) + Math.sin(frame*0.06)*3;
+    }
+  }
+
+  // spawn obstacles
+  if (gameState === 'running') {
+    spawnTimer++;
+    if (spawnTimer > spawnInterval) {
+      obstacles.push(createObstacle());
+      spawnTimer = 0;
+      // gradually increase speed and spawn rate
+      if (spawnInterval > 48) spawnInterval -= 2;
+      speed += 0.2;
+    }
+  }
+
+  // draw obstacles
+  for (let i = obstacles.length-1; i >= 0; i--) {
+    const o = obstacles[i];
+    // move
+    if (gameState === 'running') o.x -= speed;
+
+    // draw obstacle: cactuses/boxes style
+    if (o.type === 'box') {
+      ctx.fillStyle = '#2b7a1f';
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+      // small decoration
+      ctx.fillStyle = '#145214';
+      ctx.fillRect(o.x + o.w*0.2, o.y + o.h*0.2, o.w*0.15, o.h*0.15);
+      ctx.fillRect(o.x + o.w*0.6, o.y + o.h*0.3, o.w*0.12, o.h*0.12);
+    } else {
+      // pole
+      ctx.fillStyle = '#9b5cff';
+      ctx.fillRect(o.x + o.w/2 - 6, o.y, 12, o.h);
+      ctx.fillStyle = '#7a36d6';
+      ctx.fillRect(o.x + o.w/2 - 6, o.y, 12, o.h*0.25);
+    }
+
+    // scoring when obstacle passes player
+    if (!o.passed && o.x + o.w < player.x - player.width/2) {
+      score++;
+      o.passed = true;
+      playSound('score');
+      updateHUD();
+    }
+
+    // remove off-screen
+    if (o.x + o.w < -50) obstacles.splice(i,1);
+
+    // collision
+    if (checkCollision(player, o) && gameState === 'running') {
+      endGame();
+    }
+  }
+
+  // draw player
+  player.draw();
+
+  // ground decorative
+  ctx.fillStyle = '#0b3d91';
+  for (let i = 0; i < cw; i += 40) {
+    ctx.fillRect(i, ch-18, 14, 6);
+  }
+
+  // HUD drawn by DOM
+
+  requestAnimationFrame(loop);
+}
+
+// --- Input handlers
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    if (gameState === 'idle') startGame();
+    if (gameState === 'running') player.jump();
+    if (gameState === 'over') resetGame();
+  }
+  if (e.code === 'KeyM') {
+    muted = !muted;
+    muteBtn.innerText = muted ? 'Unmute' : 'Mute';
+  }
+});
+
+// Click/tap to jump or start
+canvas.addEventListener('mousedown', (e) => {
+  if (gameState === 'idle') startGame();
+  else if (gameState === 'running') player.jump();
+  else if (gameState === 'over') resetGame();
+});
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameState === 'idle') startGame();
+  else if (gameState === 'running') player.jump();
+  else if (gameState === 'over') resetGame();
+}, {passive:false});
+
+// Buttons
+restartBtn.addEventListener('click', () => { resetGame(); });
+restartBoxBtn.addEventListener('click', () => { resetGame(); });
+muteBtn.addEventListener('click', () => {
+  muted = !muted;
+  muteBtn.innerText = muted ? 'Unmute' : 'Mute';
+});
+
+// responsive canvas resize
+function resizeCanvas() {
+  // we keep internal resolution fixed for physics, scale via CSS; adjust if you want responsive internal size
+  cw = canvas.width = 900;
+  ch = canvas.height = 400;
+  // If viewport smaller, scale with CSS handled automatically by width:100% in stylesheet
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+resetGame();
+loop();
+</script>
+</body>
+</html>
+<a href="/sanjana"> GO to back to about  </a>
+<a href="/"> GO to Home </a>

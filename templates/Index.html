@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Flask App</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ff7eb3, #ff758c, #ff9770, #ffd670);
+            background-size: 400% 400%;
+            animation: gradientBG 8s ease infinite;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            color: #fff;
+            text-shadow: 0 0 10px #fff, 0 0 20px #ff73b3, 0 0 40px #ff73b3, 0 0 80px #ff73b3;
+            animation: glow 2s ease-in-out infinite alternate, fadeIn 2s ease-in-out;
+            margin-bottom: 20px;
+        }
+
+        a {
+            font-size: 1.5em;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid #fff;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            text-shadow: 0 0 10px #fff, 0 0 20px #ff73b3;
+            transform: scale(1.1);
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #fff, 0 0 20px #ff73b3, 0 0 40px #ff73b3; }
+            to { text-shadow: 0 0 20px #fff, 0 0 30px #ff73b3, 0 0 60px #ff73b3; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to My Flask App!</h1>
+    <button onclick="window.location.href='/sanjana'">About Page</button>
+</body>
+</html>
