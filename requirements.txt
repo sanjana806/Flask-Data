@@ -1,3 +1,4 @@
-Panadas
-Matplotlib
-Flask
+panadas
+matplotlib
+flask
+
