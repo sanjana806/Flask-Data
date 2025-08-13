@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Flask App</title>
+    <title>Welcome | My Flask App</title>
     <style>
         body {
             margin: 0;
@@ -12,55 +12,97 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #ff7eb3, #ff758c, #ff9770, #ffd670);
-            background-size: 400% 400%;
-            animation: gradientBG 8s ease infinite;
             font-family: 'Segoe UI', sans-serif;
+            color: #c9d1d9;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated gradient background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-45deg, #0d1117, #161b22, #1f2937, #0d1117);
+            background-size: 400% 400%;
+            animation: gradientMove 15s ease infinite;
+            z-index: -2;
+        }
+
+        /* Subtle dotted pattern overlay */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
         }
 
         h1 {
-            font-size: 3.5em;
-            color: #fff;
-            text-shadow: 0 0 10px #fff, 0 0 20px #ff73b3, 0 0 40px #ff73b3, 0 0 80px #ff73b3;
-            animation: glow 2s ease-in-out infinite alternate, fadeIn 2s ease-in-out;
+            font-size: 3em;
+            color: #f0f6fc;
             margin-bottom: 20px;
+            text-align: center;
+            animation: fadeIn 1.5s ease;
         }
 
-        a {
-            font-size: 1.5em;
+        p {
+            color: #8b949e;
+            font-size: 1.1em;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 500px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background-color: #238636;
             color: #fff;
-            text-decoration: none;
-            padding: 10px 20px;
-            border: 2px solid #fff;
-            border-radius: 25px;
-            transition: all 0.3s ease;
+            padding: 12px 24px;
+            font-size: 1.1em;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
 
-        a:hover {
-            background: rgba(255, 255, 255, 0.2);
-            text-shadow: 0 0 10px #fff, 0 0 20px #ff73b3;
-            transform: scale(1.1);
+        .btn:hover {
+            background-color: #2ea043;
+            transform: scale(1.05);
         }
 
-        @keyframes gradientBG {
+        @keyframes gradientMove {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
 
-        @keyframes glow {
-            from { text-shadow: 0 0 10px #fff, 0 0 20px #ff73b3, 0 0 40px #ff73b3; }
-            to { text-shadow: 0 0 20px #fff, 0 0 30px #ff73b3, 0 0 60px #ff73b3; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
+        footer {
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.9em;
+            color: #6e7681;
         }
     </style>
 </head>
 <body>
     <h1>Welcome to My Flask App!</h1>
-    <button onclick="window.location.href='/sanjana'">About Page</button>
+    <button class="btn" onclick="window.location.href='/sanjana'">About Page</button>
+
+    <footer>
+        &copy; 2025 My Flask App | Crafted with ❤️
+    </footer>
 </body>
 </html>
